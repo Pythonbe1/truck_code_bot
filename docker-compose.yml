@@ -6,7 +6,7 @@ services:
         image: postgres:13
         restart: always
         env_file:
-            -.env
+            - .env
         environment:
             - POSTGRES_PASSWORD=${PG_PASSWORD}
             - POSTGRES_USER=${PG_USER}
@@ -25,11 +25,8 @@ services:
         container_name: "telegram-bot"
         restart: always
         env_file:
-            -.env
-        links:
-            - postgres
-        depends_on:
-            - postgres
+            - .env
+
 
 
 
