@@ -18,25 +18,31 @@ def get_user_data(id):
                            password=os.environ.get("PG_PASSWORD"),
                            host=os.environ.get("PG_HOST"),
                            port=os.environ.get("PG_PORT"))
-    print(con)
     query = f"SELECT * from user_information where chat_id={id}"
     df = pd.read_sql_query(query, con)
     return len(df)
 
 
-def insert_db(id, first_name, second_name):
+def insert_db(id, first_name, second_name, kind):
     conn = psycopg2.connect(dbname=os.environ.get("PG_NAME"),
                             user=os.environ.get("PG_USER"),
                             password=os.environ.get("PG_PASSWORD"),
                             host=os.environ.get("PG_HOST"),
                             port=os.environ.get("PG_PORT"))
     cur = conn.cursor()
-    sql = f""" INSERT INTO user_information (chat_id, username, last_name)
+    if kind == 'insert':
+        sql = f""" INSERT INTO user_information (chat_id, username, last_name)
                  VALUES ({id}, '{first_name}', '{second_name}');"""
-    cur.execute(sql)
-    conn.commit()
-    cur.close()
-    print('Done')
+        cur.execute(sql)
+        conn.commit()
+        cur.close()
+    elif kind == 'update':
+        sql = f"""update user_information 
+                set quantity = quantity+1 
+                where chat_id={id}"""
+        cur.execute(sql)
+        conn.commit()
+        cur.close()
 
 
 def get_truck_data(code):
@@ -47,7 +53,6 @@ def get_truck_data(code):
                            port=os.environ.get("PG_PORT"))
     query = f"SELECT * from truck_information where truck_number='{str(code)}'"
     df = pd.read_sql_query(query, con)
-    print(df)
     return df
 
 
@@ -68,7 +73,10 @@ def telegram_bot(token_data):
         surname = message.from_user.last_name
         a = get_user_data(user_id)
         if a == 0:
-            insert_db(user_id, user_name, surname)
+            insert_db(user_id, user_name, surname, 'insert')
+        elif a == 1:
+            insert_db(user_id, user_name, surname, 'update')
+
         text = message.text
         result = get_truck_data(text)
         if len(result) != 0:
