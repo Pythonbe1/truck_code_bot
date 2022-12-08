@@ -49,7 +49,7 @@ def get_subscription(id, kind):
         return df['subscription_quantity'].tolist()[0]
 
 
-def insert_db(id, first_name, second_name, kind):
+def insert_db(id, first_name, second_name, link, kind):
     load_dotenv()
     conn = psycopg2.connect(dbname=os.environ.get("PG_NAME"),
                             user=os.environ.get("PG_USER"),
@@ -58,14 +58,15 @@ def insert_db(id, first_name, second_name, kind):
                             port=os.environ.get("PG_PORT"))
     cur = conn.cursor()
     if kind == 'insert':
-        sql = f""" INSERT INTO user_information (chat_id, username, last_name)
-                 VALUES ({id}, '{first_name}', '{second_name}');"""
+        sql = f""" INSERT INTO user_information (chat_id, username, last_name, link_name)
+                 VALUES ({id}, '{first_name}', '{second_name}', '{link}');"""
         cur.execute(sql)
         conn.commit()
         cur.close()
     elif kind == 'update':
         sql = f"""update user_information 
-                set quantity = quantity+1 
+                set quantity = quantity+1,
+                    link_name='{link}'
                 where chat_id={id}"""
         cur.execute(sql)
         conn.commit()
@@ -127,11 +128,12 @@ def telegram_bot(token_data):
         user_id = message.from_user.id
         user_name = message.from_user.first_name
         surname = message.from_user.last_name
+        link_name=message.from_user.username
         a = get_user_data(user_id)
         if a == 0:
-            insert_db(user_id, user_name, surname, 'insert')
+            insert_db(user_id, user_name, surname, link_name,  'insert')
         elif a == 1:
-            insert_db(user_id, user_name, surname, 'update')
+            insert_db(user_id, user_name, surname,link_name, 'update')
 
         text = message.text
         quest_id = get_chat_id(user_id)
